@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>棋盘</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+		<style type="text/css">
+			.wrap {
+				width: 400px;
+				height: 400px;
+				border: 1px solid orange;
+				background-color: #eee;
+				margin: auto;
+			}
+			
+			.min_div {
+				width: 20px;
+				height: 20px;
+				box-sizing: border-box;
+				/*border: 1px solid violet;*/
+				float: left;
+				background-color: greenyellow;
+				border-radius: 50%;
+			}
+			
+			.red {
+				background-color: green;
+			}
+			
+			.orange {
+				background-color: orange;
+			}
+			
+			.head {
+				background: url(img/head.png)  no-repeat center center;
+				background-size: cover;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="wrap" id="wrap">
+
+		</div>
+	</body>
+	<script type="text/javascript">
+		$(function($) {
+			var wrap = $("#wrap")[0];
+			$("#wrap").css("width",Math.max(400,$("window").width()-10)) ;
+			console.log($("#wrap").width());
+			var arr_all = []; //创建二维数组,每一个小数组代表一行
+			var arr_snake = []; //🐍身体
+			var snake_length = 3; //默认蛇的长度为3
+			var snake_head = snake_length - 1; //🐍头长度-1
+			var timer = null;
+			var x = 0;
+			var direction = "right";
+			var rows = 20;
+			var colums = 20;
+			var speed = 500;
+			var now_direction = "right";
+			create_map_arr(rows, colums);
+			//创建游戏面板
+			function create_map_arr(row, colum) {
+				//行
+				for (var i = 0; i < row; ++i) {
+					var arr_row = [];
+					//列
+					for (var j = 0; j < colum; ++j) {
+						var min_div = document.createElement("div");
+						min_div.className = "min_div";
+						wrap.appendChild(min_div);
+						arr_row.push(min_div);
+					}
+					arr_all.push(arr_row);
+				}
+			} //创建游戏面板结束
+			//展示🐍
+			show_snake();
+
+			function show_snake() {
+				for (var i = 0; i < snake_length; ++i) {
+					arr_all[0][i].className = "min_div red";
+					//arr_snake.push(arr_all[0][i]);
+					arr_snake[i] = arr_all[0][i];
+				}
+			}
+			game_begin();
+
+			function game_over() {
+				console.log("over");
+				clearTimeout(timer);
+			}
+			create_food(); //创建食物
+			//食物坐标
+			var food_x;
+			var food_y;
+
+			function create_food() {
+				food_x = parseInt(Math.random() * 19, 10);
+				food_y = parseInt(Math.random() * 19, 10);
+				if (is_on_snake()) {
+					create_food();
+				} else {
+					arr_all[food_x][food_y].className = "min_div orange";
+				}
+			} //食物创建结束
+			function is_on_snake() {
+				//不用遍历数组 因为属于🐍身体的都是红色
+				if (arr_all[food_x][food_y] == "min_div red") {
+					return true;
+				} else {
+					return false;
+				}
+			} //是否生在了蛇身上
+			//键盘点击事件
+			document.onkeydown = function(event) {
+				if (event.keyCode > 40 || event.keyCode < 37) {
+					direction = now_direction;
+				}
+				switch (event.keyCode) {
+					case 37:
+						//左
+						direction = "left";
+						if (now_direction == "right") {
+							direction = "right";
+							now_direction = "right";
+						} else {
+							now_direction = "left";
+						}
+						break;
+					case 38:
+						//上
+						direction = "top";
+						if (now_direction == "bottom") {
+							direction = "bottom";
+							now_direction = "bottom";
+						} else {
+							now_direction = "top";
+						}
+						break;
+					case 39:
+						//右
+						direction = "right";
+						if (now_direction == "left") {
+							direction = "left";
+							now_direction = "left";
+						} else {
+							now_direction = "right";
+						}
+						break;
+					case 40:
+						//下
+						direction = "bottom";
+						if (now_direction == "top") {
+							direction = "top";
+							now_direction = "top";
+						} else {
+							now_direction = "bottom";
+						}
+						break;
+					default:
+						break;
+				}
+			}
+
+			function checkMe(head) {
+				//检测是否碰到自己
+				for (var i = 0; i < arr_snake.length; ++i) {
+					if (arr_snake[i] == head) {
+						return true;
+					}
+				}
+				return false;
+			}
+
+			function tailHide() {
+				//隐藏尾巴
+				arr_snake[0].className = "min_div";
+			}
+
+			function isAteFood() {
+				//有没有吃到食物  🐍头的下一目标是否和食物坐标一样
+				var next_pointX = x;
+				var next_pointY = snake_head;
+				switch (direction) {
+					case "top":
+						next_pointX--;
+						break;
+					case "bottom":
+						next_pointX++;
+						break;
+					case "left":
+						next_pointY--;
+						break;
+					case "right":
+						next_pointY++;
+						break;
+					default:
+						return false;
+						break;
+				}
+				if (next_pointX == food_x && next_pointY == food_y) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+
+			function move() {
+				//移动身体
+				for (var i = 0; i < arr_snake.length; ++i) {
+					arr_snake[i] = arr_snake[i + 1];
+				}
+			}
+
+			function headShow() {
+				//显示头部
+				for (var i = 0; i < arr_snake.length; ++i) {
+					if (arr_snake.length - 1 == i) {
+						arr_snake[arr_snake.length - 1].className = "min_div red head";
+					} else {
+						arr_snake[i].className = "min_div red";
+					}
+				}
+			}
+
+			function game_begin() {
+				//🐍要向某个方向移动，默认右
+				switch (direction) {
+					case "left":
+						//有没有碰壁
+						if (snake_head - 1 < 0) {
+							game_over();
+							break;
+						}
+						//有没有碰到自己的身体
+						var head = arr_all[x][snake_head - 1];
+						//						if (checkMe(head)) {
+						//							game_over();
+						//							break;
+						//						}
+						//尾巴消失
+						tailHide();
+						//有没有吃到食物
+						if (isAteFood()) {
+							//吃到食物
+							arr_snake.push(arr_all[food_x][food_y]);
+							snake_length++;
+							speed -= 20;
+							create_food();
+						} else {
+							move();
+							arr_snake[arr_snake.length - 1] = arr_all[x][snake_head - 1];
+						}
+						//蛇头显示
+						headShow();
+						snake_head--;
+						timer = setTimeout(game_begin, speed);
+						break;
+					case "right":
+						//有没有碰壁
+						if (snake_head + 1 >= colums) {
+							game_over();
+							break;
+						}
+						//有没有碰到自己的身体
+						var head = arr_all[x][snake_head + 1];
+						if (checkMe(head)) {
+							game_over();
+							break;
+						}
+						//尾巴消失
+						tailHide();
+						//有没有吃到食物
+						if (isAteFood()) {
+							//吃到食物
+							arr_snake.push(arr_all[food_x][food_y]);
+							snake_length++;
+							speed -= 20;
+							create_food();
+						} else {
+							move();
+							arr_snake[arr_snake.length - 1] = arr_all[x][snake_head + 1];
+						}
+						//蛇头显示
+						headShow();
+						snake_head++;
+						timer = setTimeout(game_begin, speed);
+						break;
+					case "top":
+						//有没有碰壁
+						if (x - 1 < 0) {
+							game_over();
+							break;
+						}
+						//有没有碰到自己的身体
+						var head = arr_all[x - 1][snake_head];
+						if (checkMe(head)) {
+							game_over();
+							break;
+						}
+						//尾巴消失
+						tailHide();
+						//有没有吃到食物
+						if (isAteFood()) {
+							//吃到食物
+							arr_snake.push(arr_all[food_x][food_y]);
+							snake_length++;
+							speed -= 20;
+							create_food();
+						} else {
+							move();
+							arr_snake[arr_snake.length - 1] = arr_all[x - 1][snake_head];
+						}
+						//蛇头显示
+						headShow();
+						x--;
+						timer = setTimeout(game_begin, speed);
+						break;
+					case "bottom":
+						//有没有碰壁
+						if (x + 1 >= rows) {
+							game_over();
+							break;
+						}
+						//有没有碰到自己的身体
+						var head = arr_all[x + 1][snake_head];
+						if (checkMe(head)) {
+							game_over();
+							break;
+						}
+						//尾巴消失
+						tailHide();
+						//有没有吃到食物
+						if (isAteFood()) {
+							//吃到食物
+							arr_snake.push(arr_all[food_x][food_y]);
+							snake_length++;
+							speed -= 20;
+							create_food();
+						} else {
+							move();
+							arr_snake[arr_snake.length - 1] = arr_all[x + 1][snake_head];
+						}
+						//蛇头显示
+						headShow();
+						x++;
+						timer = setTimeout(game_begin, speed);
+						break;
+					default:
+						break;
+				}
+			} //begin() END
+		})
+	</script>
+
+</html>
